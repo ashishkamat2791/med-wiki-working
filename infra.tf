@@ -325,7 +325,7 @@
     }
   
     provisioner "local-exec" {
-      command = "aws ec2 wait instance-status-ok --instance-ids ${aws_instance.media_dev.id} --profile thoughtorks && ansible-playbook -i aws_hosts mediawiki-docker.yml"
+      command = "aws ec2 wait instance-status-ok --instance-ids ${aws_instance.media_dev.id} && ansible-playbook -i aws_hosts mediawiki-docker.yml"
     }
   }
   
