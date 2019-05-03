@@ -1,0 +1,16 @@
+---
+
+- name: setting up mediawiki-docker compose
+  hosts: all
+  become: true
+
+  tasks:
+  - name: copy docker-compose file to host
+      copy:
+          src: docker-compose.yml
+          dest: /tmp/docker-compose.yml
+
+    - name: setup media-wiki stack using docker-compose
+      command:
+              /tmp/docker-compose up -d
+
