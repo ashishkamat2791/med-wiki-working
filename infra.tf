@@ -1,6 +1,6 @@
   provider "aws" {
     region  = "${var.aws_region}"
-    profile = "${var.aws_profile}"
+   # profile = "${var.aws_profile}"
   }
    
 #-------------VPC-----------
@@ -317,15 +317,18 @@
   
     provisioner "local-exec" {
       command = <<EOD
-  yum update -y && yum install ansible -y
+     sudo yum update -y
+     sudo amazon-linux-extras install docker ansible2
+     sudo service docker start
   cat <<EOF > aws_hosts 
   [dev] 
   ${aws_instance.media_dev.public_ip} 
+  EOF
   EOD
     }
   
     provisioner "local-exec" {
-      command = "aws ec2 wait instance-status-ok --instance-ids ${aws_instance.media_dev.id} --profile thoughtorks && ansible-playbook -i aws_hosts mediawiki-docker.yml"
+      command = "aws ec2 wait instance-status-ok --instance-ids ${aws_instance.media_dev.id}  && ansible-playbook -i aws_hosts mediawiki-docker.yml"
     }
   }
   
