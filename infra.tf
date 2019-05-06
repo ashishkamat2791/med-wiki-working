@@ -317,7 +317,9 @@
   
     provisioner "local-exec" {
       command = <<EOD
-  yum update -y && yum install ansible -y
+     sudo yum update -y
+     sudo amazon-linux-extras install docker ansible2 -y
+     sudo service docker start
   cat <<EOF > aws_hosts 
   [dev] 
   ${aws_instance.media_dev.public_ip} 
