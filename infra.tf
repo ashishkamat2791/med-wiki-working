@@ -330,6 +330,10 @@
   
     provisioner "local-exec" {
       command = "aws ec2 wait instance-status-ok --instance-ids ${aws_instance.media_dev_main.id} && ansible-playbook -i aws_hosts swarm-init.yaml"
+  cat <<EOF > aws_hosts 
+  [dev] 
+  ${aws_instance.media_dev.public_ip} 
+  EOD
     }
     
   }
