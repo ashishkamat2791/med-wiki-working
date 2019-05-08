@@ -1,6 +1,6 @@
   provider "aws" {
     region  = "${var.aws_region}"
-   # profile = "${var.aws_profile}"
+  #  profile = "${var.aws_profile}"
   }
    
 #-------------VPC-----------
@@ -302,13 +302,45 @@
   }
   
   #dev server
-  
-  resource "aws_instance" "media_dev" {
+ resource "aws_instance" "media_dev_main" {
     instance_type = "${var.dev_instance_type}"
     ami           = "${var.dev_ami}"
   
     tags {
-      Name = "media_dev"
+      Name = "media_dev_main"
+    }
+  
+    key_name               = "${aws_key_pair.media_auth.id}"
+    vpc_security_group_ids = ["${aws_security_group.media_dev_sg.id}"]
+    subnet_id              = "${aws_subnet.media_public1_subnet.id}"
+    provisioner "local-exec" {
+      command = <<EOD
+     sudo yum update -y
+     sudo amazon-linux-extras install docker ansible2 -y
+     sudo service docker start
+     sudo curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+      sudo chmod +x /usr/local/bin/docker-compose
+      docker-compose --version
+      cat <<EOF > aws_hosts 
+      [dev] 
+      ${aws_instance.media_dev_main.public_ip} 
+      EOF
+    EOD
+    }
+  
+    provisioner "local-exec" {
+      command = "aws ec2 wait instance-status-ok --instance-ids ${aws_instance.media_dev_main.id} && ansible-playbook -i aws_hosts swarm-init.yaml"
+    }
+    
+  }
+ # node server to join docker swarm network
+resource "aws_instance" "media_dev_node" {
+
+    instance_type = "${var.dev_instance_type}"
+    ami           = "${var.dev_ami}"
+  
+    tags {
+      Name = "media_dev-node"
     }
   
     key_name               = "${aws_key_pair.media_auth.id}"
@@ -316,21 +348,17 @@
     subnet_id              = "${aws_subnet.media_public1_subnet.id}"
   
     provisioner "local-exec" {
-      command = <<EOD
-     sudo yum update -y
-     sudo amazon-linux-extras install docker ansible2
-     sudo service docker start
-  cat <<EOF > aws_hosts 
-  [dev] 
-  ${aws_instance.media_dev.public_ip} 
-  EOF
-  EOD
-    }
-  
+      command = <<ABC
+    sudo yum update -y
+     sudo amazon-linux-extras install docker ansible2 -y
+     sudo service docker star
+     ABC
+      }
     provisioner "local-exec" {
-      command = "aws ec2 wait instance-status-ok --instance-ids ${aws_instance.media_dev.id}  && ansible-playbook -i aws_hosts mediawiki-docker.yml"
-    }
-  }
+      command = "aws ec2 wait instance-status-ok --instance-ids ${aws_instance.media_dev_node.id} && ansible-playbook -i aws_hosts sawrm-join.yaml"
+    }  
+  
+} 
   
   #load balancer
   
@@ -376,7 +404,7 @@
   
   resource "aws_ami_from_instance" "media_golden" {
     name               = "media_ami-${random_id.golden_ami.b64}"
-    source_instance_id = "${aws_instance.media_dev.id}"
+    source_instance_id = "${aws_instance.media_dev_node.id}"
   
   }
   
@@ -427,3 +455,5 @@
     }
   }
   
+
+
