@@ -1,0 +1,22 @@
+---
+- name: join swarm network
+  hosts: worker
+  vars:
+    ssh_key: '/home/ec2-user/.ssh/id_rsa.pub'
+  become: true
+  tasks:
+  - name: copy ssh key
+    authorized_key:
+       key: "{{ lookup('file', ssh_key) }}"
+       user: ec2-user
+  - name: copy token to nodes
+    copy:
+        src: /tmp/token
+        dest: /tmp/token
+  - name: read the token and register
+    shell: |
+        cat /tmp/token
+    register: TOKEN
+  - name: Join to swarm cluster
+    shell: |
+           docker swarm join --token {{ TOKEN.stdout }} 
